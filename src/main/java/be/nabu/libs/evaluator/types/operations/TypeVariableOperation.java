@@ -50,7 +50,13 @@ public class TypeVariableOperation extends VariableOperation<ComplexContent> imp
 	 * @throws EvaluationException 
 	 */
 	public String resolve(ComplexContent context) throws EvaluationException {
-		return resolve(context, 0, true);
+		getContextStack().add(context);
+		try {
+			return resolve(context, 0, true);
+		}
+		finally {
+			getContextStack().pop();
+		}
 	}
 	
 	@Override
@@ -98,7 +104,7 @@ public class TypeVariableOperation extends VariableOperation<ComplexContent> imp
 				// the path you are referencing exists in the list, use it as a context
 				if (object != null && ((List<?>) object).size() > index.intValue()) {
 					object = ((List<?>) object).get(index.intValue());
-					path += "/" + resolve(object == null ? context : new BeanInstance(object), offset + 2, object != null);
+					path += "/" + resolve(object == null ? context : (object instanceof ComplexContent ? (ComplexContent) object : new BeanInstance(object)), offset + 2, object != null);
 				}
 				// it does not exist, resolve with whatever context you have
 				else
@@ -107,7 +113,7 @@ public class TypeVariableOperation extends VariableOperation<ComplexContent> imp
 		}
 		// simply append it to the string
 		else if (getParts().get(offset + 1).getType() == QueryPart.Type.VARIABLE)
-			path += "/" + resolve(object == null ? context : new BeanInstance(object), offset + 1, object != null);
+			path += "/" + resolve(object == null ? context : (object instanceof ComplexContent ? (ComplexContent) object : new BeanInstance(object)), offset + 1, object != null);
 		else
 			throw new EvaluationException("Not expecting part " + getParts().get(offset + 1).getType() + " at this point");
 		return path;
