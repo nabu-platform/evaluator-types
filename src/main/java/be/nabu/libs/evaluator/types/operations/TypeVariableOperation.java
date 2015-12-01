@@ -94,7 +94,7 @@ public class TypeVariableOperation extends VariableOperation<ComplexContent> imp
 		else if (getParts().get(offset + 1).getType() == QueryPart.Type.OPERATION) {
 			Object value = ((Operation) getParts().get(offset + 1).getContent()).evaluate(context);
 			if (!(value instanceof Number))
-				throw new EvaluationException("The part " + getParts().get(offset + 1) + " is not numeric");
+				throw new EvaluationException("The part " + getParts().get(offset + 1) + " is not numeric, it resolves to: " + value);
 			Number index = (Number) value;
 			if (index.intValue() < 0)
 				throw new EvaluationException("Can not have an index below 0");
