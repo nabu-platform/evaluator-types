@@ -10,6 +10,8 @@ import be.nabu.libs.converter.api.Converter;
 import be.nabu.libs.evaluator.QueryPart;
 import be.nabu.libs.evaluator.impl.ClassicOperation;
 import be.nabu.libs.evaluator.types.api.TypeOperation;
+import be.nabu.libs.types.SimpleTypeWrapperFactory;
+import be.nabu.libs.types.api.CollectionHandlerProvider;
 import be.nabu.libs.types.api.ComplexContent;
 import be.nabu.libs.types.api.ComplexType;
 import be.nabu.libs.types.api.SimpleType;
@@ -67,15 +69,20 @@ public class TypeClassicOperation extends ClassicOperation<ComplexContent> imple
 			if (getParts().get(i).getType().isOperator()) {
 				if (mathOperators.contains(getParts().get(i).getType())) {
 					QueryPart left = getParts().get(i - 1);
-					if (left.getType() == QueryPart.Type.OPERATION)
+					// the left operand determines the result
+					if (left.getType() == QueryPart.Type.OPERATION) {
 						return ((TypeOperation) left.getContent()).getReturnType(context);
-					else if (left.getType().isNative())
+					}
+					else if (left.getType().isNative()) {
 						return TypeNativeOperation.getType(left.getType());
-					else
+					}
+					else {
 						throw new RuntimeException("Unexpected left operand: " + left);
+					}
 				}
-				else
-					return new be.nabu.libs.types.simple.Boolean();
+				else {
+					return SimpleTypeWrapperFactory.getInstance().getWrapper().wrap(Boolean.class);
+				}
 			}
 		}
 		throw new RuntimeException("No operator found");
@@ -193,14 +200,17 @@ public class TypeClassicOperation extends ClassicOperation<ComplexContent> imple
 		return messages;
 	}
 
-	public boolean returnsList(ComplexType context) {
-		return getReturnType(context).isList();
-	}
-	
 	/**
 	 * Normally the operation does not return lists
 	 */
 	public boolean isList(ComplexType context) {
 		return false;
+	}
+	
+	/**
+	 * Never a collection
+	 */
+	public CollectionHandlerProvider<?, ?> getReturnCollectionHandler(ComplexType context) {
+		return null;
 	}
 }

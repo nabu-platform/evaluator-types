@@ -6,11 +6,16 @@ import java.util.List;
 import be.nabu.libs.evaluator.api.Operation;
 import be.nabu.libs.evaluator.impl.VariableOperation;
 import be.nabu.libs.evaluator.types.api.TypeOperation;
+import be.nabu.libs.property.ValueUtils;
+import be.nabu.libs.types.api.CollectionHandlerProvider;
 import be.nabu.libs.types.api.ComplexContent;
 import be.nabu.libs.types.api.ComplexType;
 import be.nabu.libs.types.api.Element;
+import be.nabu.libs.types.api.SimpleType;
 import be.nabu.libs.types.api.Type;
+import be.nabu.libs.types.base.ListCollectionHandlerProvider;
 import be.nabu.libs.types.java.BeanInstance;
+import be.nabu.libs.types.properties.CollectionHandlerProviderProperty;
 import be.nabu.libs.validator.api.Validation;
 import be.nabu.libs.validator.api.ValidationMessage;
 import be.nabu.libs.validator.api.ValidationMessage.Severity;
@@ -18,36 +23,26 @@ import be.nabu.libs.evaluator.EvaluationException;
 import be.nabu.libs.evaluator.QueryPart;
 
 /**
- * Note that because we don't support multi-type returns (like xpath pipe operator '|') the 
- * return result of a variable operation can always be deduced from the path plain and simple
- * Any intermediate indexed access is merely more specific access to a certain context but does not
- * change the resulting type
+ * Note that because we don't support multi-type returns (like xpath pipe operator '|') the return result of a variable operation can always be deduced from the path
+ * Any intermediate indexed access is merely more specific access to a certain context but does not change the resulting type
  * 
  * Note that resolving variable operations for the purposes of setting new values has (severe) limits on the querying possibilities!
  * Read the comments for more but in a nutshell:
  * - you can NOT use boolean queries because they have to be evaluated against a context that may not yet exist, so only numeric indexes are allowed
  * - you can only use "local" variables sparingly, the context is passed along on a best effort basis but if a non-existent path is found, the last known context is used for evaluation
- * 			> only use variables you KNOW exist or are on the root
- * 			> if this turns out to be too weird, we can just throw errors but then you can only define indexes with absolute paths
- * 
- * TODO: need to update the primitive index casting with the centralized casting system once in place
- * 
- * @author alex
- *
+ * 			- only use variables you KNOW exist or are on the root
+ * 			- if this turns out to be too weird, we can just throw errors but then you can only define indexes with absolute paths
  */
 public class TypeVariableOperation extends VariableOperation<ComplexContent> implements TypeOperation {
 
 	/**
-	 * This indicates whether or not the return type is a list
+	 * The collection handler for the return parameter
 	 */
-	private Boolean isList = null;
+	private CollectionHandlerProvider<?, ?> collectionHandler;
 	
 	/**
 	 * This can be used to resolve a variable operation into an indexed path, e.g.
 	 * my/path[1]/to[20]/something
-	 * @param context
-	 * @return
-	 * @throws EvaluationException 
 	 */
 	public String resolve(ComplexContent context) throws EvaluationException {
 		getContextStack().add(context);
@@ -58,21 +53,9 @@ public class TypeVariableOperation extends VariableOperation<ComplexContent> imp
 			getContextStack().pop();
 		}
 	}
-	
-	@Override
-	public boolean returnsList(ComplexType context) {
-		if (isList == null)
-			getReturnType(context);
-		return isList;
-	}
 
 	/**
-	 * 
-	 * @param context
-	 * @param offset
 	 * @param exists This parameter indicates whether the previous resolved object existed, so basically it indicates up until where the context is updated to match the query
-	 * @return
-	 * @throws EvaluationException
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private String resolve(ComplexContent context, int offset, boolean exists) throws EvaluationException {
@@ -125,29 +108,46 @@ public class TypeVariableOperation extends VariableOperation<ComplexContent> imp
 	 */
 	@Override
 	public Type getReturnType(ComplexType context) {
-		// initialize
-		if (isList == null)
-			isList = false;
-		return getReturnType(context, 0);
+		Type returnType = getReturnType(context, 0);
+		return returnType;
 	}
 	
 	private Type getReturnType(ComplexType context, int offset) {
 		Element<?> item = context.get(getParts().get(offset).getContent().toString());
 		// if it's the last item in the list, return it
-		if (offset == getParts().size() - 1)
+		if (offset == getParts().size() - 1) {
+			this.collectionHandler = ValueUtils.getValue(CollectionHandlerProviderProperty.getInstance(), item.getProperties());
+			if (item.getType().isList(item.getProperties()) && this.collectionHandler == null) {
+				this.collectionHandler = new ListCollectionHandlerProvider();
+			}
 			return item.getType();
+		}
 		// if it's an operation we need to check which one: index leaves the list variable alone, boolean makes it a list
 		if (getParts().get(offset + 1).getType() == QueryPart.Type.OPERATION) {
-			if (((TypeOperation) getParts().get(offset + 1).getContent()).getReturnType(context) instanceof be.nabu.libs.types.simple.Boolean)
-				isList = true;
+			Type returnType = ((TypeOperation) getParts().get(offset + 1).getContent()).getReturnType(context);
+			if (returnType instanceof SimpleType && Boolean.class.isAssignableFrom(((SimpleType<?>) returnType).getInstanceClass())) {
+				this.collectionHandler = new ListCollectionHandlerProvider();
+			}
 			// jump past index
 			offset++;
 		}
 		// if the index was the last one, return it
-		if (offset == getParts().size() - 1)
+		if (offset == getParts().size() - 1) {
+			this.collectionHandler = ValueUtils.getValue(CollectionHandlerProviderProperty.getInstance(), item.getProperties());
+			if (item.getType().isList(item.getProperties()) && this.collectionHandler == null) {
+				this.collectionHandler = new ListCollectionHandlerProvider();
+			}
 			return item.getType();
-		else
+		}
+		else {
 			return getReturnType((ComplexType) item.getType(), offset + 1);
+		}
+	}
+	
+	@Override
+	public CollectionHandlerProvider<?, ?> getReturnCollectionHandler(ComplexType context) {
+		getReturnType(context);
+		return collectionHandler;
 	}
 
 	@Override
@@ -187,31 +187,4 @@ public class TypeVariableOperation extends VariableOperation<ComplexContent> imp
 		return messages;
 	}
 	
-	/**
-	 * If you use a boolean result set in an index, you will always return a list
-	 * Otherwise it depends on the state of the last variable (it might also be a list)
-	 */
-	@Override
-	public boolean isList(ComplexType context) {
-		for (int i = 0; i < getParts().size(); i++) {
-			// get the return type of this variable
-			Type type = context.get(getParts().get(i).getContent().toString()).getType();
-			// if it's a list, check if the next is an operation (indexed access)
-			if (type.isList()) {
-				// if it's not indexed, you always get a list
-				if (i == getParts().size() - 1 || getParts().get(i + 1).getType() != QueryPart.Type.OPERATION)
-					return true;
-				// if the return type of the operation is a boolean, you still get a list, it's a query, not an index
-				else if (((TypeOperation) getParts().get(i + 1).getContent()).getReturnType(context) instanceof be.nabu.libs.types.simple.Boolean)
-					return true;
-				// otherwise you have selected a single element in the list, increase i to skip the index
-				else
-					i++;
-			}
-			// narrow the context for further loops
-			if (type instanceof ComplexType)
-				context = (ComplexType) type;
-		}
-		return false;
-	}
 }

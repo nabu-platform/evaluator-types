@@ -7,6 +7,7 @@ import be.nabu.libs.evaluator.QueryPart;
 import be.nabu.libs.evaluator.impl.NativeOperation;
 import be.nabu.libs.evaluator.types.api.TypeOperation;
 import be.nabu.libs.types.SimpleTypeWrapperFactory;
+import be.nabu.libs.types.api.CollectionHandlerProvider;
 import be.nabu.libs.types.api.ComplexContent;
 import be.nabu.libs.types.api.ComplexType;
 import be.nabu.libs.types.api.SimpleTypeWrapper;
@@ -46,14 +47,11 @@ public class TypeNativeOperation extends NativeOperation<ComplexContent> impleme
 		}
 	}
 	
-	public boolean returnsList(ComplexType context) {
-		return getReturnType(context).isList();
-	}
-	
 	/**
-	 * Normally the operation does not return lists
+	 * Never a collection
 	 */
-	public boolean isList(ComplexType context) {
-		return false;
+	@Override
+	public CollectionHandlerProvider<?, ?> getReturnCollectionHandler(ComplexType context) {
+		return null;
 	}
 }
