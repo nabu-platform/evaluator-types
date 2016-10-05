@@ -15,7 +15,7 @@ public class TestQueryValidation extends TestCase {
 	public void testSimple() throws ParseException {
 		TypeOperation operation = (TypeOperation) new PathAnalyzer<ComplexContent>(new TypesOperationProvider()).analyze(QueryParser.getInstance().parse("1 == true"));
 		// expecting one validation error: the boolean on the right side can not be cast to the number on the left
-		assertEquals(1, operation.validate(null).size());
+		assertEquals(0, operation.validate(null).size());
 	}
 	
 	public void testVariable() throws ParseException {
@@ -30,13 +30,14 @@ public class TestQueryValidation extends TestCase {
 		operation = (TypeOperation) pathAnalyzer.analyze(QueryParser.getInstance().parse("test[myInteger3 > 3]/myInteger2"));
 		assertEquals(3, operation.validate(new BeanType<Test2>(Test2.class)).size());
 		
+		// boolean casts are now possible for integers...
 		operation = (TypeOperation) pathAnalyzer.analyze(QueryParser.getInstance().parse("list[myInteger > true]/myInteger"));
-		assertEquals(1, operation.validate(new BeanType<Test2>(Test2.class)).size());
+		assertEquals(0, operation.validate(new BeanType<Test2>(Test2.class)).size());
 		
 		// the myInteger > true will be an error because integer is not comparable with boolean
 		// additionally myNonExistentRecord will obviously not exist
 		// however the validator stops there, it will not add a validation error for "something"
 		operation = (TypeOperation) pathAnalyzer.analyze(QueryParser.getInstance().parse("list[myInteger > true]/myNonExistentRecord/something"));
-		assertEquals(2, operation.validate(new BeanType<Test2>(Test2.class)).size());
+		assertEquals(1, operation.validate(new BeanType<Test2>(Test2.class)).size());
 	}
 }
