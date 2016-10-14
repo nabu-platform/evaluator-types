@@ -2,6 +2,7 @@ package be.nabu.libs.evaluator.types.operations;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 import be.nabu.libs.evaluator.api.Operation;
 import be.nabu.libs.evaluator.impl.VariableOperation;
@@ -150,43 +151,76 @@ public class TypeVariableOperation extends VariableOperation<ComplexContent> imp
 		return collectionHandler;
 	}
 
+	private static ThreadLocal<Stack<ComplexType>> contextStack = new ThreadLocal<Stack<ComplexType>>();
+	
 	@Override
 	public List<Validation<?>> validate(ComplexType context) {
-		List<Validation<?>> messages = new ArrayList<Validation<?>>();
-		for (int i = 0; i < getParts().size(); i++) {
-			if (getParts().get(i).getType() != QueryPart.Type.VARIABLE) {
-				messages.add(new ValidationMessage(Severity.ERROR, "The child " + getParts().get(i).getContent() + " can not be used in a path"));
-				break;
+		if (contextStack.get() == null) {
+			contextStack.set(new Stack<ComplexType>());
+		}
+		int pushes = 0;
+		try {
+			// whether or not we are evaluating against the root of this operation
+			// if at the root, the usage of "/" is taken literally (e.g. for query operations that refer to the general root)
+			// if not at the root, the usage of "/" is taken as a variable separator
+			boolean isRootAccess = true;
+			if (contextStack.get().isEmpty()) {
+				contextStack.get().push(context);
+				pushes++;
 			}
-			String path = (String) getParts().get(i).getContent();
-			// strip leading
-			if (path.startsWith("/"))
-				path = path.substring(1);
-			Element<?> childContext = context.get(path);
-			if (childContext == null) {
-				messages.add(new ValidationMessage(Severity.ERROR, "The child " + path + " does not exist in the context"));
-				break;
-			}
-			if (i < getParts().size() - 1) {
-				if (childContext.getType() instanceof ComplexType) {
-					context = (ComplexType) childContext.getType();
-				}
-				// check if the next part is an operation
-				// note that an operation can only be conducted on a list
-				if (getParts().get(i + 1).getType() == QueryPart.Type.OPERATION) {
-					if (!childContext.getType().isList(childContext.getProperties())) {
-						messages.add(new ValidationMessage(Severity.ERROR, "The element " + childContext.getName() + " is not a collection, the subquery can not be run on it"));
-					}
-					messages.addAll(((TypeOperation) getParts().get(++i).getContent()).validate(context));
-				}
-				// even after any possible list validation, there is still part of the query left
-				if (!(childContext.getType() instanceof ComplexType) && i < getParts().size() - 1) {
-					messages.add(new ValidationMessage(Severity.ERROR, "The child " + childContext.getName() + " is not complex, further variable access is impossible"));
+			List<Validation<?>> messages = new ArrayList<Validation<?>>();
+			for (int i = 0; i < getParts().size(); i++) {
+				if (getParts().get(i).getType() != QueryPart.Type.VARIABLE) {
+					messages.add(new ValidationMessage(Severity.ERROR, "The child " + getParts().get(i).getContent() + " can not be used in a path"));
 					break;
 				}
+				String path = (String) getParts().get(i).getContent();
+				// strip leading
+				Element<?> childContext;
+				if (path.startsWith("/")) {
+					if (isRootAccess) {
+						childContext = contextStack.get().get(0).get(path.substring(1));
+					}
+					else {
+						childContext = context.get(path.substring(1));	
+					}
+				}
+				else {
+					childContext = context.get(path);
+				}
+				if (childContext == null) {
+					messages.add(new ValidationMessage(Severity.ERROR, "The child " + path + " does not exist in the context"));
+					break;
+				}
+				if (i < getParts().size() - 1) {
+					if (childContext.getType() instanceof ComplexType) {
+						context = (ComplexType) childContext.getType();
+						contextStack.get().push(context);
+						pushes++;
+						isRootAccess = false;
+					}
+					// check if the next part is an operation
+					// note that an operation can only be conducted on a list
+					if (getParts().get(i + 1).getType() == QueryPart.Type.OPERATION) {
+						if (!childContext.getType().isList(childContext.getProperties())) {
+							messages.add(new ValidationMessage(Severity.ERROR, "The element " + childContext.getName() + " is not a collection, the subquery can not be run on it"));
+						}
+						messages.addAll(((TypeOperation) getParts().get(++i).getContent()).validate(context));
+					}
+					// even after any possible list validation, there is still part of the query left
+					if (!(childContext.getType() instanceof ComplexType) && i < getParts().size() - 1) {
+						messages.add(new ValidationMessage(Severity.ERROR, "The child " + childContext.getName() + " is not complex, further variable access is impossible"));
+						break;
+					}
+				}
+			}
+			return messages;
+		}
+		finally {
+			for (int i = 0; i < pushes; i++) {
+				contextStack.get().pop();
 			}
 		}
-		return messages;
 	}
 	
 }
