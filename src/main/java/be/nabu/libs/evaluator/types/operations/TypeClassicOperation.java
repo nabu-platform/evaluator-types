@@ -139,9 +139,9 @@ public class TypeClassicOperation extends ClassicOperation<ComplexContent> imple
 								messages.add(new ValidationMessage(Severity.ERROR, "The operator " + part + " does not support a right operand"));
 						break;
 						case ADD:
-							if (!Number.class.isAssignableFrom(leftClass) && !String.class.isAssignableFrom(leftClass))
+							if (!Number.class.isAssignableFrom(leftClass) && !String.class.isAssignableFrom(leftClass) && !getConverter().canConvert(leftClass, String.class) && !getConverter().canConvert(leftClass, Double.class))
 								messages.add(new ValidationMessage(Severity.ERROR, "The operator " + part + " only supports numbers & strings, the left operand is however of type " + leftClass));
-							if (!Number.class.isAssignableFrom(rightClass) && !String.class.isAssignableFrom(rightClass))
+							if (!Number.class.isAssignableFrom(rightClass) && !String.class.isAssignableFrom(rightClass) && !getConverter().canConvert(rightClass, String.class) && !getConverter().canConvert(rightClass, Double.class))
 								messages.add(new ValidationMessage(Severity.ERROR, "The operator " + part + " only supports numbers & strings, the left operand is however of type " + rightClass));
 							if (!getConverter().canConvert(rightClass, leftClass))
 								messages.add(new ValidationMessage(Severity.ERROR, "The right operand of type " + rightClass + " can not be cast to the type of the left operand " + leftClass));
