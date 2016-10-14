@@ -170,16 +170,18 @@ public class TypeVariableOperation extends VariableOperation<ComplexContent> imp
 			if (i < getParts().size() - 1) {
 				if (childContext.getType() instanceof ComplexType) {
 					context = (ComplexType) childContext.getType();
-					// check if the next part is an operation
-					// note that an operation can only be conducted on a list
-					if (getParts().get(i + 1).getType() == QueryPart.Type.OPERATION) {
-						if (!childContext.getType().isList(childContext.getProperties()))
-							messages.add(new ValidationMessage(Severity.ERROR, "The element " + childContext.getName() + " is not a collection"));
-						messages.addAll(((TypeOperation) getParts().get(++i).getContent()).validate(context));
-					}
 				}
-				else {
-					messages.add(new ValidationMessage(Severity.ERROR, "The child " + childContext.getName() + " is not complex, the subquery can not be run on it"));
+				// check if the next part is an operation
+				// note that an operation can only be conducted on a list
+				if (getParts().get(i + 1).getType() == QueryPart.Type.OPERATION) {
+					if (!childContext.getType().isList(childContext.getProperties())) {
+						messages.add(new ValidationMessage(Severity.ERROR, "The element " + childContext.getName() + " is not a collection, the subquery can not be run on it"));
+					}
+					messages.addAll(((TypeOperation) getParts().get(++i).getContent()).validate(context));
+				}
+				// even after any possible list validation, there is still part of the query left
+				if (!(childContext.getType() instanceof ComplexType) && i < getParts().size() - 1) {
+					messages.add(new ValidationMessage(Severity.ERROR, "The child " + childContext.getName() + " is not complex, further variable access is impossible"));
 					break;
 				}
 			}
