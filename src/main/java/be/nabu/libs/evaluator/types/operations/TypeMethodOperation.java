@@ -36,19 +36,25 @@ public class TypeMethodOperation extends MethodOperation<ComplexContent> impleme
 	@Override
 	public List<Validation<?>> validate(ComplexType context) {
 		List<Validation<?>> messages = new ArrayList<Validation<?>>();
-		Method method = (Method) getParts().get(0).getContent();
-		Class<?> [] parameterTypes = method.getParameterTypes();
-		for (int i = 1; i < getParts().size(); i++) {
-			TypeOperation argumentOperation = (TypeOperation) getParts().get(i).getContent();
-			Type returnType = argumentOperation.getReturnType(context);
-			if (returnType instanceof ComplexType) {
-				if (!parameterTypes[i - 1].isAssignableFrom(ComplexContent.class))
-					messages.add(new ValidationMessage(Severity.ERROR, "Argument " + i + " expects a " + parameterTypes[i - 1] + " but will instead receive a ComplexContent instance"));
-			}
-			else {
-				Class<?> returnClass = ((SimpleType<?>) returnType).getInstanceClass();
-				if (!parameterTypes[i - 1].isAssignableFrom(returnClass))
-					messages.add(new ValidationMessage(Severity.ERROR, "Argument " + i + " expects a " + parameterTypes[i - 1] + " but will instead receive a " + returnClass + " instance"));
+		Object content = getParts().get(0).getContent();
+		if (!(content instanceof Method)) {
+			messages.add(new ValidationMessage(Severity.ERROR, "Method '" + content + "' is not resolved"));
+		}
+		else {
+			Method method = (Method) content;
+			Class<?> [] parameterTypes = method.getParameterTypes();
+			for (int i = 1; i < getParts().size(); i++) {
+				TypeOperation argumentOperation = (TypeOperation) getParts().get(i).getContent();
+				Type returnType = argumentOperation.getReturnType(context);
+				if (returnType instanceof ComplexType) {
+					if (!parameterTypes[i - 1].isAssignableFrom(ComplexContent.class))
+						messages.add(new ValidationMessage(Severity.ERROR, "Argument " + i + " expects a " + parameterTypes[i - 1] + " but will instead receive a ComplexContent instance"));
+				}
+				else {
+					Class<?> returnClass = ((SimpleType<?>) returnType).getInstanceClass();
+					if (!parameterTypes[i - 1].isAssignableFrom(returnClass))
+						messages.add(new ValidationMessage(Severity.ERROR, "Argument " + i + " expects a " + parameterTypes[i - 1] + " but will instead receive a " + returnClass + " instance"));
+				}
 			}
 		}
 		return messages;
