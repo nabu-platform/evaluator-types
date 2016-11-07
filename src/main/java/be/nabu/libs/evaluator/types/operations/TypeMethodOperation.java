@@ -23,25 +23,26 @@ public class TypeMethodOperation extends MethodOperation<ComplexContent> impleme
 
 	@Override
 	public Type getReturnType(ComplexType context) {
-		Method method = (Method) getParts().get(0).getContent();
-		Class<?> returnType = method.getReturnType();
-		CollectionHandlerProvider<?, ?> handler = CollectionHandlerFactory.getInstance().getHandler().getHandler(returnType);
-		if (handler != null) {
-			returnType = handler.getComponentType(returnType);
+		try {
+			Method method = getMethod(getParts().size() - 1);
+			Class<?> returnType = method.getReturnType();
+			CollectionHandlerProvider<?, ?> handler = CollectionHandlerFactory.getInstance().getHandler().getHandler(returnType);
+			if (handler != null) {
+				returnType = handler.getComponentType(returnType);
+			}
+			DefinedSimpleType<?> wrap = SimpleTypeWrapperFactory.getInstance().getWrapper().wrap(returnType);
+			return wrap != null ? wrap : BeanResolver.getInstance().resolve(returnType);
 		}
-		DefinedSimpleType<?> wrap = SimpleTypeWrapperFactory.getInstance().getWrapper().wrap(returnType);
-		return wrap != null ? wrap : BeanResolver.getInstance().resolve(returnType);
+		catch (Exception e) {
+			throw new RuntimeException("Could not find method: " + getParts().get(0).getContent());
+		}
 	}
 
 	@Override
 	public List<Validation<?>> validate(ComplexType context) {
 		List<Validation<?>> messages = new ArrayList<Validation<?>>();
-		Object content = getParts().get(0).getContent();
-		if (!(content instanceof Method)) {
-			messages.add(new ValidationMessage(Severity.ERROR, "Method '" + content + "' is not resolved"));
-		}
-		else {
-			Method method = (Method) content;
+		try {
+			Method method = getMethod(getParts().size() - 1);
 			Class<?> [] parameterTypes = method.getParameterTypes();
 			for (int i = 1; i < getParts().size(); i++) {
 				TypeOperation argumentOperation = (TypeOperation) getParts().get(i).getContent();
@@ -56,6 +57,9 @@ public class TypeMethodOperation extends MethodOperation<ComplexContent> impleme
 						messages.add(new ValidationMessage(Severity.ERROR, "Argument " + i + " expects a " + parameterTypes[i - 1] + " but will instead receive a " + returnClass + " instance"));
 				}
 			}
+		}
+		catch (Exception e) {
+			messages.add(new ValidationMessage(Severity.ERROR, "Method '" + getParts().get(0).getContent() + "' could not be resolved: " + e.getMessage()));
 		}
 		return messages;
 	}
