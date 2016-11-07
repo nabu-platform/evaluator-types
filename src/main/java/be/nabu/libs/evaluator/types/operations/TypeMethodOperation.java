@@ -53,8 +53,20 @@ public class TypeMethodOperation extends MethodOperation<ComplexContent> impleme
 				}
 				else {
 					Class<?> returnClass = ((SimpleType<?>) returnType).getInstanceClass();
-					if (!parameterTypes[i - 1].isAssignableFrom(returnClass))
+					boolean isPrimitiveNumber = parameterTypes[i - 1].equals(double.class)
+						|| parameterTypes[i - 1].equals(long.class)
+						|| parameterTypes[i - 1].equals(int.class)
+						|| parameterTypes[i - 1].equals(short.class)
+						|| parameterTypes[i - 1].equals(float.class);
+					if (isPrimitiveNumber && Number.class.isAssignableFrom(returnClass)) {
+						continue;
+					}
+					else if (boolean.class.equals(parameterTypes[i - 1]) && Boolean.class.isAssignableFrom(returnClass)) {
+						continue;
+					}
+					else if (!parameterTypes[i - 1].isAssignableFrom(returnClass)) {
 						messages.add(new ValidationMessage(Severity.ERROR, "Argument " + i + " expects a " + parameterTypes[i - 1] + " but will instead receive a " + returnClass + " instance"));
+					}
 				}
 			}
 		}
