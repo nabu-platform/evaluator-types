@@ -2,7 +2,6 @@ package be.nabu.libs.evaluator.types.operations;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 
 import be.nabu.libs.converter.ConverterFactory;
@@ -59,6 +58,15 @@ public class TypeClassicOperation extends ClassicOperation<ComplexContent> imple
 		else
 			return null;
 	}
+	
+	private CollectionHandlerProvider<?, ?> getOperandCollectionHandler(ComplexType context, int position) {
+		QueryPart part = getParts().get(position);
+		if (part.getType() == QueryPart.Type.OPERATION) {
+			// only resolve the operation if it is valid
+			return ((TypeOperation) part.getContent()).getReturnCollectionHandler(context);
+		}
+		return null;
+	}
 
 	@Override
 	public Type getReturnType(ComplexType context) {
@@ -102,8 +110,21 @@ public class TypeClassicOperation extends ClassicOperation<ComplexContent> imple
 					messages.add(new ValidationMessage(Severity.ERROR, "There is no right operand for the operator " + part));
 				else {
 					int size = messages.size();
-					Type leftOperand = part.getType().hasLeftOperand() ? getOperand(context, i - 1, messages) : null;
-					Type rightOperand = part.getType().hasRightOperand() ? getOperand(context, i + 1, messages) : null;
+					Type leftOperand = null;
+					try {
+						leftOperand = part.getType().hasLeftOperand() ? getOperand(context, i - 1, messages) : null;
+					}
+					catch (Exception e) {
+						messages.add(new ValidationMessage(Severity.ERROR, "The operator " + part + " expects a left operand, but could not resolve: " + getParts().get(i - 1).getContent() + ": " + e.getMessage()));
+					}
+					
+					Type rightOperand = null;
+					try {
+						rightOperand = part.getType().hasRightOperand() ? getOperand(context, i + 1, messages) : null;
+					}
+					catch (Exception e) {
+						messages.add(new ValidationMessage(Severity.ERROR, "The operator " + part + " expects a right operand, but could not resolve: " + getParts().get(i + 1).getContent() + ": " + e.getMessage()));
+					}
 					
 					// break out of the validation if validation messages were added by a child operation
 					if (size != messages.size())
@@ -184,8 +205,9 @@ public class TypeClassicOperation extends ClassicOperation<ComplexContent> imple
 						break;
 						case IN:
 						case NOT_IN:
-							if (!Collection.class.isAssignableFrom(rightClass) && !Object[].class.isAssignableFrom(rightClass))
+							if (!Iterable.class.isAssignableFrom(rightClass) && !Object[].class.isAssignableFrom(rightClass) && getOperandCollectionHandler(context, i + 1) == null) {
 								messages.add(new ValidationMessage(Severity.ERROR, "The operator " + part + " only supports a collection as the right operand, it is however of type " + rightClass));
+							}
 						break;
 						case MATCHES:
 						case NOT_MATCHES:

@@ -109,16 +109,45 @@ public class TypeVariableOperation extends VariableOperation<ComplexContent> imp
 	 */
 	@Override
 	public Type getReturnType(ComplexType context) {
-		Type returnType = getReturnType(context, 0);
-		return returnType;
+		if (contextStack.get() == null) {
+			contextStack.set(new Stack<ComplexType>());
+		}
+		boolean pushed = false;
+		if (contextStack.get().isEmpty()) {
+			pushed = true;
+			contextStack.get().push(context);
+		}
+		try {
+			Type returnType = getReturnType(context, 0);
+			return returnType;
+		}
+		finally {
+			if (pushed) {
+				contextStack.get().pop();
+			}
+		}
 	}
 	
 	private Type getReturnType(ComplexType context, int offset) {
-		Element<?> item = context.get(getParts().get(offset).getContent().toString());
+		String path = getParts().get(offset).getContent().toString();
+		Element<?> item;
+		// if it starts with a "/", we could be looking at an absolute root access (in a subquery) or simply the leading "/" for a path at the root
+		if (path.startsWith("/")) {
+			item = offset == 0 ? contextStack.get().get(0).get(path.substring(1)) : context.get(path.substring(1));
+		}
+		else {
+			item = context.get(path);
+		}
+		if (item == null) {
+			throw new IllegalArgumentException("Can not find '" + path + "' in: " + (offset == 0 && path.startsWith("/") ? contextStack.get().get(0) : context) + " (offset=" + offset + ")");
+		}
 		// if it's the last item in the list, return it
 		if (offset == getParts().size() - 1) {
-			this.collectionHandler = ValueUtils.getValue(CollectionHandlerProviderProperty.getInstance(), item.getProperties());
-			if (item.getType().isList(item.getProperties()) && this.collectionHandler == null) {
+			CollectionHandlerProvider<?, ?> collectionHandler = ValueUtils.getValue(CollectionHandlerProviderProperty.getInstance(), item.getProperties());
+			if (collectionHandler != null) {
+				this.collectionHandler = collectionHandler;
+			}
+			else if (item.getType().isList(item.getProperties()) && this.collectionHandler == null) {
 				this.collectionHandler = new ListCollectionHandlerProvider();
 			}
 			return item.getType();
@@ -132,10 +161,23 @@ public class TypeVariableOperation extends VariableOperation<ComplexContent> imp
 			// jump past index
 			offset++;
 		}
+		// if the item is a list and it is not followed by an operation, the result will automatically become a list as well
+		else if (item.getType().isList(item.getProperties())) {
+			CollectionHandlerProvider<?, ?> collectionHandler = ValueUtils.getValue(CollectionHandlerProviderProperty.getInstance(), item.getProperties());
+			if (collectionHandler != null) {
+				this.collectionHandler = collectionHandler;
+			}
+			else if (this.collectionHandler == null) {
+				this.collectionHandler = new ListCollectionHandlerProvider();
+			}
+		}
 		// if the index was the last one, return it
 		if (offset == getParts().size() - 1) {
-			this.collectionHandler = ValueUtils.getValue(CollectionHandlerProviderProperty.getInstance(), item.getProperties());
-			if (item.getType().isList(item.getProperties()) && this.collectionHandler == null) {
+			CollectionHandlerProvider<?, ?> collectionHandler = ValueUtils.getValue(CollectionHandlerProviderProperty.getInstance(), item.getProperties());
+			if (collectionHandler != null) {
+				this.collectionHandler = collectionHandler;
+			}
+			else if (item.getType().isList(item.getProperties()) && this.collectionHandler == null) {
 				this.collectionHandler = new ListCollectionHandlerProvider();
 			}
 			return item.getType();
