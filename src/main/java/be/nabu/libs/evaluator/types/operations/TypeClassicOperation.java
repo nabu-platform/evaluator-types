@@ -31,6 +31,14 @@ public class TypeClassicOperation extends ClassicOperation<ComplexContent> imple
 		QueryPart.Type.MOD,
 		QueryPart.Type.POWER
 	});
+	
+	private static List<QueryPart.Type> booleanOperators = Arrays.asList(new QueryPart.Type[] {
+		QueryPart.Type.LOGICAL_AND,
+		QueryPart.Type.LOGICAL_OR,
+		QueryPart.Type.NOT,
+		QueryPart.Type.XOR,
+		QueryPart.Type.NOT_XOR
+	});
 
 	public Converter getConverter() {
 		if (converter == null)
@@ -136,19 +144,22 @@ public class TypeClassicOperation extends ClassicOperation<ComplexContent> imple
 						break;
 					}
 					
+					// if you are doing boolean checks, this can be done with complex types too
 					// otherwise you are doing more complex operations which require simple types
-					if (leftOperand != null && !(leftOperand instanceof SimpleType))
-						messages.add(new ValidationMessage(Severity.ERROR, "The left operand " + leftOperand + " is not compatible with the operator " + part));
-					else if (rightOperand != null && !(rightOperand instanceof SimpleType))
-						messages.add(new ValidationMessage(Severity.ERROR, "The right operand " + rightOperand + " is not compatible with the operator " + part));
+					if (!booleanOperators.contains(part.getType())) {
+						if (leftOperand != null && !(leftOperand instanceof SimpleType))
+							messages.add(new ValidationMessage(Severity.ERROR, "The left operand " + leftOperand + " is not compatible with the operator " + part));
+						else if (rightOperand != null && !(rightOperand instanceof SimpleType))
+							messages.add(new ValidationMessage(Severity.ERROR, "The right operand " + rightOperand + " is not compatible with the operator " + part));
+					}
 					
-					Class<?> leftClass = leftOperand != null ? ((SimpleType<?>) leftOperand).getInstanceClass() : null;
-					Class<?> rightClass = rightOperand != null ? ((SimpleType<?>) rightOperand).getInstanceClass() : null;
+					Class<?> leftClass = leftOperand instanceof SimpleType ? ((SimpleType<?>) leftOperand).getInstanceClass() : null;
+					Class<?> rightClass = rightOperand instanceof SimpleType ? ((SimpleType<?>) rightOperand).getInstanceClass() : null;
 					
 					switch(part.getType()) {
 						case NOT:
-							if (!Boolean.class.isAssignableFrom(rightClass))
-								messages.add(new ValidationMessage(Severity.ERROR, "The operator " + part + " expects a boolean right operand, not " + rightClass));
+							// the right class can be anything really, whether it can be converted to boolean or not
+							// there is an interpretation for any type, either through conversion or null check
 							if (leftOperand != null)
 								messages.add(new ValidationMessage(Severity.ERROR, "The operator " + part + " does not support a left operand"));
 						break;
@@ -198,9 +209,9 @@ public class TypeClassicOperation extends ClassicOperation<ComplexContent> imple
 						case LOGICAL_OR:
 						case XOR:
 						case NOT_XOR:
-							if (!Boolean.class.isAssignableFrom(leftClass))
+							if (leftClass != null && !Boolean.class.isAssignableFrom(leftClass) && !getConverter().canConvert(leftClass, Boolean.class))
 								messages.add(new ValidationMessage(Severity.ERROR, "The operator " + part + " only supports boolean types, the left operand is however of type " + leftClass));
-							if (!Boolean.class.isAssignableFrom(rightClass))
+							if (rightClass != null && !Boolean.class.isAssignableFrom(rightClass) && !getConverter().canConvert(rightClass, Boolean.class))
 								messages.add(new ValidationMessage(Severity.ERROR, "The operator " + part + " only supports boolean types, the right operand is however of type " + rightClass));
 						break;
 						case IN:
@@ -211,9 +222,9 @@ public class TypeClassicOperation extends ClassicOperation<ComplexContent> imple
 						break;
 						case MATCHES:
 						case NOT_MATCHES:
-							if (!String.class.isAssignableFrom(leftClass))
+							if (!String.class.isAssignableFrom(leftClass) && !getConverter().canConvert(leftClass, String.class))
 								messages.add(new ValidationMessage(Severity.ERROR, "The operator " + part + " only supports string types, the left operand is however of type " + leftClass));
-							if (!String.class.isAssignableFrom(rightClass))
+							if (!String.class.isAssignableFrom(rightClass) && !getConverter().canConvert(rightClass, String.class))
 								messages.add(new ValidationMessage(Severity.ERROR, "The operator " + part + " only supports string types, the right operand is however of type " + rightClass));
 					}
 				}
