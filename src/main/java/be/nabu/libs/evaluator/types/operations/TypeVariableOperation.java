@@ -14,6 +14,7 @@ import be.nabu.libs.types.api.ComplexType;
 import be.nabu.libs.types.api.Element;
 import be.nabu.libs.types.api.SimpleType;
 import be.nabu.libs.types.api.Type;
+import be.nabu.libs.types.base.ComplexElementImpl;
 import be.nabu.libs.types.base.ListCollectionHandlerProvider;
 import be.nabu.libs.types.java.BeanInstance;
 import be.nabu.libs.types.properties.CollectionHandlerProviderProperty;
@@ -226,6 +227,14 @@ public class TypeVariableOperation extends VariableOperation<ComplexContent> imp
 					else {
 						childContext = context.get(path.substring(1));	
 					}
+				}
+				else if ("$this".equals(path)) {
+					if (contextStack.get().isEmpty()) {
+						messages.add(new ValidationMessage(Severity.ERROR, "Can not use the $this reference without a valid context"));
+						break;	
+					}
+					// a single instance of the current one
+					childContext = new ComplexElementImpl("$this", contextStack.get().peek(), null);
 				}
 				else {
 					childContext = context.get(path);
