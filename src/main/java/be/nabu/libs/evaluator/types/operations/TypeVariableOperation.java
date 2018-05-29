@@ -17,6 +17,7 @@ import be.nabu.libs.types.api.Type;
 import be.nabu.libs.types.base.ComplexElementImpl;
 import be.nabu.libs.types.base.ListCollectionHandlerProvider;
 import be.nabu.libs.types.java.BeanInstance;
+import be.nabu.libs.types.java.BeanType;
 import be.nabu.libs.types.properties.CollectionHandlerProviderProperty;
 import be.nabu.libs.validator.api.Validation;
 import be.nabu.libs.validator.api.ValidationMessage;
@@ -238,6 +239,10 @@ public class TypeVariableOperation extends VariableOperation<ComplexContent> imp
 				}
 				else {
 					childContext = context.get(path);
+					// we can not validate further if we have encountered an object
+					if (childContext == null && context instanceof BeanType && ((BeanType<?>) context).getBeanClass().equals(Object.class)) {
+						break;
+					}
 				}
 				if (childContext == null) {
 					messages.add(new ValidationMessage(Severity.ERROR, "The child " + path + " does not exist in the context"));
