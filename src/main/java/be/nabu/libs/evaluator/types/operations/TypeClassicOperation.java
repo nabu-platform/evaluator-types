@@ -57,6 +57,9 @@ public class TypeClassicOperation extends ClassicOperation<ComplexContent> imple
 		}
 		else if (part.getType().isNative())
 			return TypeNativeOperation.getType(part.getType());
+		else if (part.getContent().toString().equals("$this")) {
+			return context;
+		}
 		else if (part.getType() == QueryPart.Type.OPERATION) {
 			int size = messages.size();
 			messages.addAll(((TypeOperation) part.getContent()).validate(context));
@@ -146,7 +149,8 @@ public class TypeClassicOperation extends ClassicOperation<ComplexContent> imple
 					
 					// if you are doing boolean checks, this can be done with complex types too
 					// otherwise you are doing more complex operations which require simple types
-					if (!booleanOperators.contains(part.getType())) {
+					// except for "in" and "not in"
+					if (!booleanOperators.contains(part.getType()) && part.getType() != QueryPart.Type.IN && part.getType() != QueryPart.Type.NOT_IN) {
 						if (leftOperand != null && !(leftOperand instanceof SimpleType))
 							messages.add(new ValidationMessage(Severity.ERROR, "The left operand " + leftOperand + " is not compatible with the operator " + part));
 						else if (rightOperand != null && !(rightOperand instanceof SimpleType))
