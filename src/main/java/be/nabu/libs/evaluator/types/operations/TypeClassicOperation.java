@@ -200,11 +200,11 @@ public class TypeClassicOperation extends ClassicOperation<ComplexContent> imple
 						case LESSER_OR_EQUALS:
 						case GREATER:
 						case GREATER_OR_EQUALS:
-							if (!Comparable.class.isAssignableFrom(leftClass))
+							if (leftClass != null && !Comparable.class.isAssignableFrom(leftClass))
 								messages.add(new ValidationMessage(Severity.ERROR, "The operator " + part + " only supports comparable types, the left operand is however of type " + leftClass));
-							if (!Comparable.class.isAssignableFrom(rightClass))
+							if (rightClass != null && !Comparable.class.isAssignableFrom(rightClass))
 								messages.add(new ValidationMessage(Severity.ERROR, "The operator " + part + " only supports comparable types, the right operand is however of type " + rightClass));
-							if (!getConverter().canConvert(rightClass, leftClass))
+							if (leftClass != null && rightClass != null && !getConverter().canConvert(rightClass, leftClass))
 								messages.add(new ValidationMessage(Severity.ERROR, "The right operand of type " + rightClass + " can not be cast to the type of the left operand " + leftClass));
 						break;
 						case BITWISE_AND:
@@ -226,9 +226,9 @@ public class TypeClassicOperation extends ClassicOperation<ComplexContent> imple
 						break;
 						case MATCHES:
 						case NOT_MATCHES:
-							if (!String.class.isAssignableFrom(leftClass) && !getConverter().canConvert(leftClass, String.class))
+							if (leftClass != null && !String.class.isAssignableFrom(leftClass) && !getConverter().canConvert(leftClass, String.class))
 								messages.add(new ValidationMessage(Severity.ERROR, "The operator " + part + " only supports string types, the left operand is however of type " + leftClass));
-							if (!String.class.isAssignableFrom(rightClass) && !getConverter().canConvert(rightClass, String.class))
+							if (rightClass != null && !String.class.isAssignableFrom(rightClass) && !getConverter().canConvert(rightClass, String.class))
 								messages.add(new ValidationMessage(Severity.ERROR, "The operator " + part + " only supports string types, the right operand is however of type " + rightClass));
 					}
 				}
