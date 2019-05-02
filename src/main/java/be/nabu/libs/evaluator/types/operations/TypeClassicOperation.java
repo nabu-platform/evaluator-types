@@ -10,11 +10,13 @@ import be.nabu.libs.evaluator.QueryPart;
 import be.nabu.libs.evaluator.impl.ClassicOperation;
 import be.nabu.libs.evaluator.types.api.TypeOperation;
 import be.nabu.libs.types.SimpleTypeWrapperFactory;
+import be.nabu.libs.types.TypeUtils;
 import be.nabu.libs.types.api.CollectionHandlerProvider;
 import be.nabu.libs.types.api.ComplexContent;
 import be.nabu.libs.types.api.ComplexType;
 import be.nabu.libs.types.api.SimpleType;
 import be.nabu.libs.types.api.Type;
+import be.nabu.libs.types.java.BeanType;
 import be.nabu.libs.validator.api.Validation;
 import be.nabu.libs.validator.api.ValidationMessage;
 import be.nabu.libs.validator.api.ValidationMessage.Severity;
@@ -159,6 +161,14 @@ public class TypeClassicOperation extends ClassicOperation<ComplexContent> imple
 					
 					Class<?> leftClass = leftOperand instanceof SimpleType ? ((SimpleType<?>) leftOperand).getInstanceClass() : null;
 					Class<?> rightClass = rightOperand instanceof SimpleType ? ((SimpleType<?>) rightOperand).getInstanceClass() : null;
+					
+					// in some cases we are doing operations on arrays of objects which are not modeled as simple types
+					if (leftClass == null && leftOperand instanceof BeanType && ((BeanType<?>) leftOperand).getBeanClass().equals(Object.class)) {
+						leftClass = Object.class;
+					}
+					if (rightClass == null && rightOperand instanceof BeanType && ((BeanType<?>) rightOperand).getBeanClass().equals(Object.class)) {
+						rightClass = Object.class;
+					}
 					
 					switch(part.getType()) {
 						case NOT:
