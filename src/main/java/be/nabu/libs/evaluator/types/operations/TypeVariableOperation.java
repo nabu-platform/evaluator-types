@@ -238,11 +238,15 @@ public class TypeVariableOperation extends VariableOperation<ComplexContent> imp
 					childContext = new ComplexElementImpl("$this", contextStack.get().peek(), null);
 				}
 				else {
-					childContext = context.get(path);
-					// we can not validate further if we have encountered an object
-					if (childContext == null && context instanceof BeanType && ((BeanType<?>) context).getBeanClass().equals(Object.class)) {
+					// stop before because the next step will throw an exception if we try it on a beantype
+					if (context instanceof BeanType && ((BeanType<?>) context).getBeanClass().equals(Object.class)) {
 						break;
 					}
+					childContext = context.get(path);
+					// we can not validate further if we have encountered an object
+//					if (childContext == null && context instanceof BeanType && ((BeanType<?>) context).getBeanClass().equals(Object.class)) {
+//						break;
+//					}
 				}
 				if (childContext == null) {
 					messages.add(new ValidationMessage(Severity.ERROR, "The child " + path + " does not exist in the context"));
