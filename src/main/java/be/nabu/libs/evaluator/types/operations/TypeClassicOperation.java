@@ -9,6 +9,9 @@ import be.nabu.libs.converter.api.Converter;
 import be.nabu.libs.evaluator.QueryPart;
 import be.nabu.libs.evaluator.impl.ClassicOperation;
 import be.nabu.libs.evaluator.types.api.TypeOperation;
+import be.nabu.libs.property.ValueUtils;
+import be.nabu.libs.property.api.Property;
+import be.nabu.libs.property.api.Value;
 import be.nabu.libs.types.SimpleTypeWrapperFactory;
 import be.nabu.libs.types.TypeUtils;
 import be.nabu.libs.types.api.CollectionHandlerProvider;
@@ -230,7 +233,16 @@ public class TypeClassicOperation extends ClassicOperation<ComplexContent> imple
 						break;
 						case IN:
 						case NOT_IN:
-							if (!Iterable.class.isAssignableFrom(rightClass) && !Object[].class.isAssignableFrom(rightClass) && getOperandCollectionHandler(context, i + 1) == null) {
+							if (rightClass == null) {
+								if (rightOperand == null) {
+									messages.add(new ValidationMessage(Severity.ERROR, "The operator " + part + " requires a right operand"));	
+								}
+								else {
+									// we currently have no full proof way to detect that this is a list
+									// we only get the return type, which is (almost) never a list, it is the properties of the element around it that make it a list
+								}
+							}
+							else if (!Iterable.class.isAssignableFrom(rightClass) && !Object[].class.isAssignableFrom(rightClass) && getOperandCollectionHandler(context, i + 1) == null) {
 								messages.add(new ValidationMessage(Severity.ERROR, "The operator " + part + " only supports a collection as the right operand, it is however of type " + rightClass));
 							}
 						break;
