@@ -139,6 +139,9 @@ public class TypeVariableOperation extends VariableOperation<ComplexContent> imp
 		}
 		else {
 			item = context.get(path);
+			if (item == null && path.startsWith("@")) {
+				item = context.get(path.substring(1));
+			}
 		}
 		if (item == null) {
 			throw new IllegalArgumentException("Can not find '" + path + "' in: " + (offset == 0 && path.startsWith("/") ? contextStack.get().get(0) : context) + " (offset=" + offset + ")");
@@ -243,6 +246,10 @@ public class TypeVariableOperation extends VariableOperation<ComplexContent> imp
 						break;
 					}
 					childContext = context.get(path);
+					// if we can't find the context and its an attribute, it might be modelled as just an element
+					if (childContext == null && path.startsWith("@")) {
+						childContext = context.get(path.substring(1));
+					}
 					// we can not validate further if we have encountered an object
 //					if (childContext == null && context instanceof BeanType && ((BeanType<?>) context).getBeanClass().equals(Object.class)) {
 //						break;
