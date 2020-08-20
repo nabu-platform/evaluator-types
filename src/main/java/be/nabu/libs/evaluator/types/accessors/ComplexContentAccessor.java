@@ -6,11 +6,12 @@ import java.util.List;
 
 import be.nabu.libs.evaluator.EvaluationException;
 import be.nabu.libs.evaluator.api.ListableContextAccessor;
+import be.nabu.libs.evaluator.api.WritableContextAccessor;
 import be.nabu.libs.types.TypeUtils;
 import be.nabu.libs.types.api.ComplexContent;
 import be.nabu.libs.types.api.Element;
 
-public class ComplexContentAccessor implements ListableContextAccessor<ComplexContent> {
+public class ComplexContentAccessor implements ListableContextAccessor<ComplexContent>, WritableContextAccessor<ComplexContent> {
 
 	@Override
 	public Class<ComplexContent> getContextType() {
@@ -36,6 +37,11 @@ public class ComplexContentAccessor implements ListableContextAccessor<ComplexCo
 			}
 		}
 		return names;
+	}
+
+	@Override
+	public void set(ComplexContent context, String name, Object value) throws EvaluationException {
+		context.set(name, value);
 	}
 
 }
