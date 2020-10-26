@@ -124,6 +124,10 @@ public class TypeClassicOperation extends ClassicOperation<ComplexContent> imple
 					messages.add(new ValidationMessage(Severity.ERROR, "There is no left operand for the operator " + part));
 				else if (part.getType().hasRightOperand() && i >= getParts().size() - 1)
 					messages.add(new ValidationMessage(Severity.ERROR, "There is no right operand for the operator " + part));
+				// ignore checks if the context is an object, we can't really verify much...
+				else if (context instanceof BeanType && Object.class.equals(((BeanType<?>) context).getBeanClass())) {
+					continue;
+				}
 				else {
 					int size = messages.size();
 					Type leftOperand = null;

@@ -24,7 +24,12 @@ public class JavaBeanAccessor implements ContextAccessor<Object>, WritableContex
 	@SuppressWarnings("rawtypes")
 	@Override
 	public Object get(Object context, String name) throws EvaluationException {
-		return new BeanInstance(context).get(name);
+		BeanInstance beanInstance = new BeanInstance(context);
+		// if it doesn't exist, don't try to resolve it, it will fail...
+		if (beanInstance.getType().get(name) == null) {
+			return null;
+		}
+		return beanInstance.get(name);
 	}
 
 	@SuppressWarnings("rawtypes")
