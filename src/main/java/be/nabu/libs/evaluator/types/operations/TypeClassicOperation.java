@@ -192,12 +192,20 @@ public class TypeClassicOperation extends ClassicOperation<ComplexContent> imple
 								messages.add(new ValidationMessage(Severity.ERROR, "The operator " + part + " does not support a right operand"));
 						break;
 						case ADD:
-							if (!Number.class.isAssignableFrom(leftClass) && !String.class.isAssignableFrom(leftClass) && !getConverter().canConvert(leftClass, String.class) && !getConverter().canConvert(leftClass, Double.class))
-								messages.add(new ValidationMessage(Severity.ERROR, "The operator " + part + " only supports numbers & strings, the left operand is however of type " + leftClass));
-							if (!Number.class.isAssignableFrom(rightClass) && !String.class.isAssignableFrom(rightClass) && !getConverter().canConvert(rightClass, String.class) && !getConverter().canConvert(rightClass, Double.class))
-								messages.add(new ValidationMessage(Severity.ERROR, "The operator " + part + " only supports numbers & strings, the left operand is however of type " + rightClass));
-							if (!getConverter().canConvert(rightClass, leftClass))
-								messages.add(new ValidationMessage(Severity.ERROR, "The right operand of type " + rightClass + " can not be cast to the type of the left operand " + leftClass));
+							if (leftClass == null) {
+								messages.add(new ValidationMessage(Severity.ERROR, "The operator " + part + " requires a left operand, a valid one could not be resolved"));
+							}
+							else if (rightClass == null) {
+								messages.add(new ValidationMessage(Severity.ERROR, "The operator " + part + " requires a right operand, a valid one could not be resolved"));
+							}
+							else {
+								if (!Number.class.isAssignableFrom(leftClass) && !String.class.isAssignableFrom(leftClass) && !getConverter().canConvert(leftClass, String.class) && !getConverter().canConvert(leftClass, Double.class))
+									messages.add(new ValidationMessage(Severity.ERROR, "The operator " + part + " only supports numbers & strings, the left operand is however of type " + leftClass));
+								if (!Number.class.isAssignableFrom(rightClass) && !String.class.isAssignableFrom(rightClass) && !getConverter().canConvert(rightClass, String.class) && !getConverter().canConvert(rightClass, Double.class))
+									messages.add(new ValidationMessage(Severity.ERROR, "The operator " + part + " only supports numbers & strings, the left operand is however of type " + rightClass));
+								if (!getConverter().canConvert(rightClass, leftClass))
+									messages.add(new ValidationMessage(Severity.ERROR, "The right operand of type " + rightClass + " can not be cast to the type of the left operand " + leftClass));
+							}
 						break;
 						case POWER:
 						case MULTIPLY:
