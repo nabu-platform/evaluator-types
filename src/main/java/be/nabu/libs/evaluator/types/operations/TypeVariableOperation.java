@@ -178,13 +178,16 @@ public class TypeVariableOperation extends VariableOperation<ComplexContent> imp
 		}
 		// if the index was the last one, return it
 		if (offset == getParts().size() - 1) {
-			CollectionHandlerProvider<?, ?> collectionHandler = ValueUtils.getValue(CollectionHandlerProviderProperty.getInstance(), item.getProperties());
-			if (collectionHandler != null) {
-				this.collectionHandler = collectionHandler;
-			}
-			else if (item.getType().isList(item.getProperties()) && this.collectionHandler == null) {
-				this.collectionHandler = new ListCollectionHandlerProvider();
-			}
+			// @2021-10-29: this condition is the exact same as line 150, we should've already jumped out there _unless_ there is an index
+			// if there is an index however, whether or not the result was a collection, is already determined
+			// by running the following code, we _always_ have a collection handler if we have an index (being that an index can only be on a collection)
+//			CollectionHandlerProvider<?, ?> collectionHandler = ValueUtils.getValue(CollectionHandlerProviderProperty.getInstance(), item.getProperties());
+//			if (collectionHandler != null) {
+//				this.collectionHandler = collectionHandler;
+//			}
+//			else if (item.getType().isList(item.getProperties()) && this.collectionHandler == null) {
+//				this.collectionHandler = new ListCollectionHandlerProvider();
+//			}
 			return item.getType();
 		}
 		else {
