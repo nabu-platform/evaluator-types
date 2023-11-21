@@ -159,7 +159,8 @@ public class TypeClassicOperation extends ClassicOperation<ComplexContent> imple
 					// if you are doing boolean checks, this can be done with complex types too
 					// otherwise you are doing more complex operations which require simple types
 					// except for "in" and "not in"
-					if (!booleanOperators.contains(part.getType()) && part.getType() != QueryPart.Type.IN && part.getType() != QueryPart.Type.NOT_IN) {
+					// additionally equals and not equals can also be done
+					if (!booleanOperators.contains(part.getType()) && part.getType() != QueryPart.Type.IN && part.getType() != QueryPart.Type.NOT_IN && part.getType() != QueryPart.Type.EQUALS && part.getType() != QueryPart.Type.NOT_EQUALS) {
 						if (leftOperand != null && !(leftOperand instanceof SimpleType))
 							messages.add(new ValidationMessage(Severity.ERROR, "The left operand " + leftOperand + " is not compatible with the operator " + part));
 						else if (rightOperand != null && !(rightOperand instanceof SimpleType))

@@ -22,6 +22,12 @@ public class ComplexContentAccessor implements ListableContextAccessor<ComplexCo
 	public boolean has(ComplexContent context, String name) throws EvaluationException {
 		return context.getType().get(name) != null;
 	}
+	
+
+	@Override
+	public boolean hasValue(ComplexContent context, String name) throws EvaluationException {
+		return context.has(name);
+	}
 
 	@Override
 	public Object get(ComplexContent context, String name) throws EvaluationException {
