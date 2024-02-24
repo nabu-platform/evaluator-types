@@ -178,6 +178,11 @@ public class TypeClassicOperation extends ClassicOperation<ComplexContent> imple
 						rightClass = Object.class;
 					}
 					
+					// We can't really draw any conclusions at this point
+					if (Object.class.equals(leftClass) || Object.class.equals(rightClass)) {
+						continue;
+					}
+					
 					switch(part.getType()) {
 						case NOT:
 							// the right class can be anything really, whether it can be converted to boolean or not
