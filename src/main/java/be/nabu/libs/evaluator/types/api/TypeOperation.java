@@ -20,6 +20,7 @@ package be.nabu.libs.evaluator.types.api;
 import java.util.List;
 
 import be.nabu.libs.evaluator.api.Operation;
+import be.nabu.libs.property.api.Value;
 import be.nabu.libs.types.api.CollectionHandlerProvider;
 import be.nabu.libs.types.api.ComplexContent;
 import be.nabu.libs.types.api.ComplexType;
@@ -30,4 +31,7 @@ public interface TypeOperation extends Operation<ComplexContent> {
 	public List<Validation<?>> validate(ComplexType context);
 	public Type getReturnType(ComplexType context);
 	public CollectionHandlerProvider<?, ?> getReturnCollectionHandler(ComplexType context);
+	public default Value<?>[] getReturnProperties(ComplexType context) { 
+		return null;
+	};
 }

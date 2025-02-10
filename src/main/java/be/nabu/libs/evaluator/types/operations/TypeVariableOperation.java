@@ -25,6 +25,7 @@ import be.nabu.libs.evaluator.api.Operation;
 import be.nabu.libs.evaluator.impl.VariableOperation;
 import be.nabu.libs.evaluator.types.api.TypeOperation;
 import be.nabu.libs.property.ValueUtils;
+import be.nabu.libs.property.api.Value;
 import be.nabu.libs.types.api.CollectionHandlerProvider;
 import be.nabu.libs.types.api.ComplexContent;
 import be.nabu.libs.types.api.ComplexType;
@@ -59,6 +60,7 @@ public class TypeVariableOperation extends VariableOperation<ComplexContent> imp
 	 * The collection handler for the return parameter
 	 */
 	private CollectionHandlerProvider<?, ?> collectionHandler;
+	private Value<?>[] properties;
 	
 	/**
 	 * This can be used to resolve a variable operation into an indexed path, e.g.
@@ -172,6 +174,7 @@ public class TypeVariableOperation extends VariableOperation<ComplexContent> imp
 			else if (item.getType().isList(item.getProperties()) && this.collectionHandler == null) {
 				this.collectionHandler = new ListCollectionHandlerProvider();
 			}
+			properties = item.getProperties();
 			return item.getType();
 		}
 		// if it's an operation we need to check which one: index leaves the list variable alone, boolean makes it a list
@@ -205,6 +208,7 @@ public class TypeVariableOperation extends VariableOperation<ComplexContent> imp
 //			else if (item.getType().isList(item.getProperties()) && this.collectionHandler == null) {
 //				this.collectionHandler = new ListCollectionHandlerProvider();
 //			}
+			properties = item.getProperties();
 			return item.getType();
 		}
 		else {
@@ -216,6 +220,13 @@ public class TypeVariableOperation extends VariableOperation<ComplexContent> imp
 	public CollectionHandlerProvider<?, ?> getReturnCollectionHandler(ComplexType context) {
 		getReturnType(context);
 		return collectionHandler;
+	}
+	
+	@Override
+	public Value<?>[] getReturnProperties(ComplexType context) {
+		getReturnType(context);
+		System.out.println("Getting variable properties: " + properties);
+		return properties;
 	}
 
 	private static ThreadLocal<Stack<ComplexType>> contextStack = new ThreadLocal<Stack<ComplexType>>();

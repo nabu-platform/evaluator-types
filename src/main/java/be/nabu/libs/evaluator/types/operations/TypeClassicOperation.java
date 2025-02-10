@@ -27,16 +27,15 @@ import be.nabu.libs.evaluator.QueryPart;
 import be.nabu.libs.evaluator.impl.ClassicOperation;
 import be.nabu.libs.evaluator.types.api.TypeOperation;
 import be.nabu.libs.property.ValueUtils;
-import be.nabu.libs.property.api.Property;
 import be.nabu.libs.property.api.Value;
 import be.nabu.libs.types.SimpleTypeWrapperFactory;
-import be.nabu.libs.types.TypeUtils;
 import be.nabu.libs.types.api.CollectionHandlerProvider;
 import be.nabu.libs.types.api.ComplexContent;
 import be.nabu.libs.types.api.ComplexType;
 import be.nabu.libs.types.api.SimpleType;
 import be.nabu.libs.types.api.Type;
 import be.nabu.libs.types.java.BeanType;
+import be.nabu.libs.types.properties.EpsilonProperty;
 import be.nabu.libs.validator.api.Validation;
 import be.nabu.libs.validator.api.ValidationMessage;
 import be.nabu.libs.validator.api.ValidationMessage.Severity;
@@ -72,6 +71,14 @@ public class TypeClassicOperation extends ClassicOperation<ComplexContent> imple
 		this.converter = converter;
 	}
 
+	private Value<?>[] getOperandProperties(ComplexType context, int position) {
+		QueryPart part = getParts().get(position);
+		if (part.getType() == QueryPart.Type.OPERATION) {
+			return ((TypeOperation) part.getContent()).getReturnProperties(context);
+		}
+		return null;
+	}
+	
 	private Type getOperand(ComplexType context, int position, List<Validation<?>> messages) {
 		QueryPart part = getParts().get(position);
 		if (part.getType() == QueryPart.Type.NULL) {
@@ -307,4 +314,27 @@ public class TypeClassicOperation extends ClassicOperation<ComplexContent> imple
 	public CollectionHandlerProvider<?, ?> getReturnCollectionHandler(ComplexType context) {
 		return null;
 	}
+
+	@Override
+	protected double getDoubleEpsilon(ComplexContent context, int leftPosition, int rightPosition, double left, double right) {
+		if (context != null) {
+			Double epsilon = null;
+			Value<?>[] leftOperandProperties = getOperandProperties(context.getType(), leftPosition);
+			if (leftOperandProperties != null) {
+				epsilon = ValueUtils.getValue(EpsilonProperty.getInstance(), leftOperandProperties);
+			}
+			Value<?>[] rightOperandProperties = getOperandProperties(context.getType(), rightPosition);
+			if (rightOperandProperties != null) {
+				Double rightEpsilon = ValueUtils.getValue(EpsilonProperty.getInstance(), rightOperandProperties);
+				if (rightEpsilon != null && (epsilon == null || rightEpsilon > epsilon)) {
+					epsilon = rightEpsilon;
+				}
+			}
+			if (epsilon != null) {
+				return epsilon;
+			}
+		}
+		return super.getDoubleEpsilon(context, leftPosition, rightPosition, left, right);
+	}
+	
 }
