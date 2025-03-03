@@ -248,7 +248,7 @@ public class TypeClassicOperation extends ClassicOperation<ComplexContent> imple
 								messages.add(new ValidationMessage(Severity.ERROR, "The operator " + part + " only supports numbers, the left operand is however of type " + rightClass));
 						case EQUALS:
 						case NOT_EQUALS:
-							if (!getConverter().canConvert(rightClass, leftClass))
+							if (rightClass != null && leftClass != null && !getConverter().canConvert(rightClass, leftClass))
 								messages.add(new ValidationMessage(Severity.ERROR, "The right operand of type " + rightClass + " can not be cast to the type of the left operand " + leftClass));
 						break;
 						case LESSER:
