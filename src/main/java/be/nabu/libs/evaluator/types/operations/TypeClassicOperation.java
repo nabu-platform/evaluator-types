@@ -44,6 +44,14 @@ public class TypeClassicOperation extends ClassicOperation<ComplexContent> imple
 	
 	private Converter converter;
 	
+	public TypeClassicOperation() {
+		// auto construct
+	}
+
+	public TypeClassicOperation(boolean allowOperatorOverloading) {
+		super(allowOperatorOverloading);
+	}
+
 	private static List<QueryPart.Type> mathOperators = Arrays.asList(new QueryPart.Type[] {
 		QueryPart.Type.ADD,
 		QueryPart.Type.SUBSTRACT,

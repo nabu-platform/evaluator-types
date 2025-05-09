@@ -23,10 +23,19 @@ import be.nabu.libs.types.api.ComplexContent;
 
 public class TypesOperationProvider implements OperationProvider<ComplexContent> {
 
+	private boolean allowOperatorOverloading;
+	
+	public TypesOperationProvider() {
+		this(true);
+	}
+	public TypesOperationProvider(boolean allowOperatorOverloading) {
+		this.allowOperatorOverloading = allowOperatorOverloading;
+	}
+	
 	@Override
 	public Operation<ComplexContent> newOperation(OperationType type) {
 		switch(type) {
-			case CLASSIC: return new TypeClassicOperation();
+			case CLASSIC: return new TypeClassicOperation(allowOperatorOverloading);
 			case METHOD: return new TypeMethodOperation();
 			case VARIABLE: return new TypeVariableOperation();
 			case NATIVE: return new TypeNativeOperation();
