@@ -92,6 +92,10 @@ public class TypeClassicOperation extends ClassicOperation<ComplexContent> imple
 		if (part.getType() == QueryPart.Type.NULL) {
 			return null;
 		}
+		// for validation purposes, undefined does not have a separate type, fall back to null
+		else if (part.getType() == QueryPart.Type.UNDEFINED) {
+			return null;
+		}
 		else if (part.getType().isNative())
 			return TypeNativeOperation.getType(part.getType());
 		else if (part.getContent().toString().equals("$this")) {

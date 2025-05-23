@@ -225,7 +225,7 @@ public class TypeVariableOperation extends VariableOperation<ComplexContent> imp
 	@Override
 	public Value<?>[] getReturnProperties(ComplexType context) {
 		getReturnType(context);
-		System.out.println("Getting variable properties: " + properties);
+//		System.out.println("Getting variable properties: " + properties);
 		return properties;
 	}
 
