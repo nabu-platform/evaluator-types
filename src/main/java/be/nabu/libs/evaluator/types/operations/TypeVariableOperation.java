@@ -124,12 +124,15 @@ public class TypeVariableOperation extends VariableOperation<ComplexContent> imp
 		return path;
 	}
 	
+	@Override
+	public Type getReturnType(ComplexType context) {
+		return getReturnType(context, false);
+	}
 	/**
 	 * For calculating the return type we simply need to return the type of the last field in the variable
 	 * If the last variable has an index and it is a numeric return type, we can leave the maxOccurs, otherwise we will have to make a list out of it
 	 */
-	@Override
-	public Type getReturnType(ComplexType context) {
+	public Type getReturnType(ComplexType context, boolean allowRuntimeAccess) {
 		if (contextStack.get() == null) {
 			contextStack.set(new Stack<ComplexType>());
 		}
@@ -139,7 +142,7 @@ public class TypeVariableOperation extends VariableOperation<ComplexContent> imp
 			contextStack.get().push(context);
 		}
 		try {
-			Type returnType = getReturnType(context, 0);
+			Type returnType = getReturnType(context, 0, allowRuntimeAccess);
 			return returnType;
 		}
 		finally {
@@ -149,12 +152,21 @@ public class TypeVariableOperation extends VariableOperation<ComplexContent> imp
 		}
 	}
 	
-	private Type getReturnType(ComplexType context, int offset) {
+	// @2025-07-29: we have a filter on a list of structures. that filter contains a double comparison based on one field _in_ the structure and one field on the parent pipeline.
+	// however, the definition context stack does NOT contain the full context, in other words it does not contain the pipeline parent, this makes it impossible to resolve that field
+	// to determine the epsilon we need the properties of that element though
+	// so I've added the ability to check the runtime context (which _does_ contain the parent pipeline instance) and base the typing information on that when accessing the root with an absolute path
+	private Type getReturnType(ComplexType context, int offset, boolean allowRuntimeAccess) {
 		String path = getParts().get(offset).getContent().toString();
 		Element<?> item;
 		// if it starts with a "/", we could be looking at an absolute root access (in a subquery) or simply the leading "/" for a path at the root
 		if (path.startsWith("/")) {
-			item = offset == 0 ? contextStack.get().get(0).get(path.substring(1)) : context.get(path.substring(1));
+			if (allowRuntimeAccess && VariableOperation.getCurrentRootContext() instanceof ComplexContent) {
+				item = ((ComplexContent) VariableOperation.getCurrentRootContext()).getType().get(path.substring(1));
+			}
+			else {
+				item = offset == 0 ? contextStack.get().get(0).get(path.substring(1)) : context.get(path.substring(1));
+			}
 		}
 		else {
 			item = context.get(path);
@@ -212,7 +224,7 @@ public class TypeVariableOperation extends VariableOperation<ComplexContent> imp
 			return item.getType();
 		}
 		else {
-			return getReturnType((ComplexType) item.getType(), offset + 1);
+			return getReturnType((ComplexType) item.getType(), offset + 1, allowRuntimeAccess);
 		}
 	}
 	
@@ -226,6 +238,11 @@ public class TypeVariableOperation extends VariableOperation<ComplexContent> imp
 	public Value<?>[] getReturnProperties(ComplexType context) {
 		getReturnType(context);
 //		System.out.println("Getting variable properties: " + properties);
+		return properties;
+	}
+	
+	public Value<?> [] getReturnProperties(ComplexType context, boolean allowRuntimeAccess) {
+		getReturnType(context, allowRuntimeAccess);
 		return properties;
 	}
 

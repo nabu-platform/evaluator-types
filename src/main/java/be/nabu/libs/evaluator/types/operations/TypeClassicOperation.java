@@ -25,6 +25,7 @@ import be.nabu.libs.converter.ConverterFactory;
 import be.nabu.libs.converter.api.Converter;
 import be.nabu.libs.evaluator.QueryPart;
 import be.nabu.libs.evaluator.impl.ClassicOperation;
+import be.nabu.libs.evaluator.impl.VariableOperation;
 import be.nabu.libs.evaluator.types.api.TypeOperation;
 import be.nabu.libs.property.ValueUtils;
 import be.nabu.libs.property.api.Value;
@@ -82,7 +83,12 @@ public class TypeClassicOperation extends ClassicOperation<ComplexContent> imple
 	private Value<?>[] getOperandProperties(ComplexType context, int position) {
 		QueryPart part = getParts().get(position);
 		if (part.getType() == QueryPart.Type.OPERATION) {
-			return ((TypeOperation) part.getContent()).getReturnProperties(context);
+			if (part.getContent() instanceof TypeVariableOperation) {
+				return ((TypeVariableOperation) part.getContent()).getReturnProperties(context, true);
+			}
+			else {
+				return ((TypeOperation) part.getContent()).getReturnProperties(context);
+			}
 		}
 		return null;
 	}
